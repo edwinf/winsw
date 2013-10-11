@@ -1,0 +1,56 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
+
+namespace winsw
+{
+    public static class SigIntHelper
+    {
+        private const string KERNEL32 = "kernel32.dll";
+
+        [DllImport(KERNEL32, SetLastError = true)]
+        private static extern bool AttachConsole(uint dwProcessId);
+
+        [DllImport(KERNEL32, SetLastError = true, ExactSpelling = true)]
+        private static extern bool FreeConsole();
+
+        [DllImport(KERNEL32)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
+        // Delegate type to be used as the Handler Routine for SCCH
+        private delegate Boolean ConsoleCtrlDelegate(CtrlTypes CtrlType);
+
+        // Enumerated type for the control messages sent to the handler routine
+        private enum CtrlTypes : uint
+        {
+            CTRL_C_EVENT = 0,
+            CTRL_BREAK_EVENT,
+            CTRL_CLOSE_EVENT,
+            CTRL_LOGOFF_EVENT = 5,
+            CTRL_SHUTDOWN_EVENT
+        }
+
+        [DllImport(KERNEL32)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GenerateConsoleCtrlEvent(CtrlTypes dwCtrlEvent, uint dwProcessGroupId);
+
+        public static bool SendSIGINTToProcess(Process process)
+        {
+            if (AttachConsole((uint)process.Id))
+            {
+                //Disable Ctrl-C handling for our program
+                SetConsoleCtrlHandler(null, true);
+                GenerateConsoleCtrlEvent(CtrlTypes.CTRL_C_EVENT, 0);
+
+                process.WaitForExit(15000);
+
+                return process.HasExited;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+}

@@ -437,6 +437,17 @@ namespace winsw
         }
 
         /// <summary>
+        /// True if the service can interact with the desktop.
+        /// </summary>
+        public bool SendSIGINT
+        {
+            get
+            {
+                return dom.SelectSingleNode("//sendsigint") != null;
+            }
+        }
+
+        /// <summary>
         /// Environment variable overrides
         /// </summary>
         public Dictionary<string, string> EnvironmentVariables
